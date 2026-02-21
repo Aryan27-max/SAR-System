@@ -16,23 +16,6 @@ import os
 import sys
 from pathlib import Path
 
-
-def _load_env_file(env_file: Path = Path(".env")) -> None:
-    """Load simple KEY=VALUE lines from .env into environment if not already set."""
-    if not env_file.exists():
-        return
-
-    for line in env_file.read_text(encoding="utf-8").splitlines():
-        stripped = line.strip()
-        if not stripped or stripped.startswith("#") or "=" not in stripped:
-            continue
-        key, value = stripped.split("=", 1)
-        key = key.strip()
-        value = value.strip().strip('"').strip("'")
-        if key and key not in os.environ:
-            os.environ[key] = value
-
-
 def _build_prompt(subject: str, narrative: str) -> str:
     return f"""
 You are a compliance analyst drafting a Suspicious Activity Report (SAR).
@@ -104,7 +87,6 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
 
 def main(argv: list[str]) -> int:
-    _load_env_file()
     args = parse_args(argv)
 
     if not args.narrative_file.exists():
