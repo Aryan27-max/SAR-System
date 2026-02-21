@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRole } from "../context/RoleContext";
 import { RiskBadge, RiskLevel } from "../components/RiskBadge";
 import { StatusBadge, CaseStatus } from "../components/StatusBadge";
@@ -55,6 +55,21 @@ export const GenerateSAR = () => {
 
   const canEdit = user?.role === "Analyst" || user?.role === "Supervisor";
   const canApprove = user?.role === "Supervisor";
+
+  // Fetch the real case status and narrative from the backend on mount
+  useEffect(() => {
+    api.getCase(CASE_ID)
+      .then((caseData) => {
+        setStatus(caseData.status as CaseStatus);
+        if (caseData.narrative) {
+          setNarrative(caseData.narrative);
+          setIsGenerated(true);
+        }
+      })
+      .catch(() => {
+        // Silently fall back to defaults if fetch fails
+      });
+  }, []);
   const isReadOnly = user?.role === "Auditor";
 
   const handleGenerate = async () => {
