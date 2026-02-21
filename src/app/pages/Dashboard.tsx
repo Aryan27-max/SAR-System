@@ -1,85 +1,74 @@
+import { useEffect, useState } from "react";
 import { MetricCard } from "../components/MetricCard";
 import { RiskBadge, RiskLevel } from "../components/RiskBadge";
 import { StatusBadge, CaseStatus } from "../components/StatusBadge";
-import { FileText, AlertTriangle, Clock, TrendingDown } from "lucide-react";
+import { FileText, AlertTriangle, Clock, TrendingDown, Loader2 } from "lucide-react";
 import { Link } from "react-router";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { api } from "../lib/api";
 
-const riskDistributionData = [
-  { name: "High", value: 23, color: "#DC2626" },
-  { name: "Medium", value: 48, color: "#F59E0B" },
-  { name: "Low", value: 129, color: "#10B981" },
-];
-
-const recentCases = [
-  {
-    id: "SAR-2026-00234",
-    customer: "Jonathan Martinez",
-    riskLevel: "High" as RiskLevel,
-    status: "Under Review" as CaseStatus,
-    date: "2026-02-14",
-    amount: "$1,245,000",
-  },
-  {
-    id: "SAR-2026-00233",
-    customer: "Chen Wei",
-    riskLevel: "High" as RiskLevel,
-    status: "Draft" as CaseStatus,
-    date: "2026-02-14",
-    amount: "$856,400",
-  },
-  {
-    id: "SAR-2026-00232",
-    customer: "Sarah O'Brien",
-    riskLevel: "Medium" as RiskLevel,
-    status: "Approved" as CaseStatus,
-    date: "2026-02-13",
-    amount: "$342,100",
-  },
-  {
-    id: "SAR-2026-00231",
-    customer: "Ahmed Al-Rashid",
-    riskLevel: "High" as RiskLevel,
-    status: "Submitted" as CaseStatus,
-    date: "2026-02-13",
-    amount: "$2,100,000",
-  },
-  {
-    id: "SAR-2026-00230",
-    customer: "Maria Silva",
-    riskLevel: "Medium" as RiskLevel,
-    status: "Filed" as CaseStatus,
-    date: "2026-02-12",
-    amount: "$189,500",
-  },
-];
+type DashboardData = Awaited<ReturnType<typeof api.getDashboard>>;
 
 export const Dashboard = () => {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    api.getDashboard()
+      .then(setData)
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          <span className="text-sm">Loading dashboard...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <AlertTriangle className="w-8 h-8 text-destructive mx-auto mb-2" />
+          <p className="text-sm text-destructive">Failed to load dashboard: {error}</p>
+          <p className="text-xs text-muted-foreground mt-1">Make sure the backend server is running on port 3001</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
           title="Total Active Cases"
-          value="200"
+          value={String(data.metrics.totalActive)}
           icon={FileText}
           trend={{ value: "12% from last month", isPositive: true }}
         />
         <MetricCard
           title="High Risk Cases"
-          value="23"
+          value={String(data.metrics.highRisk)}
           icon={AlertTriangle}
           color="text-[#DC2626]"
         />
         <MetricCard
           title="Pending Approvals"
-          value="15"
+          value={String(data.metrics.pendingApprovals)}
           icon={Clock}
           color="text-[#F59E0B]"
         />
         <MetricCard
           title="Avg. SAR Draft Time"
-          value="48 min"
+          value={data.metrics.avgDraftTime}
           icon={TrendingDown}
           trend={{ value: "85% reduction", isPositive: true }}
           color="text-[#10B981]"
@@ -95,7 +84,7 @@ export const Dashboard = () => {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={riskDistributionData}
+                  data={data.riskDistribution}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
@@ -103,7 +92,7 @@ export const Dashboard = () => {
                   paddingAngle={2}
                   dataKey="value"
                 >
-                  {riskDistributionData.map((entry, index) => (
+                  {data.riskDistribution.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -119,7 +108,7 @@ export const Dashboard = () => {
             </ResponsiveContainer>
           </div>
           <div className="flex items-center justify-center gap-6 mt-4">
-            {riskDistributionData.map((item) => (
+            {data.riskDistribution.map((item) => (
               <div key={item.name} className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded" style={{ backgroundColor: item.color }}></div>
                 <span className="text-sm text-muted-foreground">
@@ -135,16 +124,7 @@ export const Dashboard = () => {
           <h3 className="text-sm font-medium text-foreground mb-4">Compliance Backlog Trend</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={[
-                  { month: "Sep", cases: 245 },
-                  { month: "Oct", cases: 289 },
-                  { month: "Nov", cases: 312 },
-                  { month: "Dec", cases: 267 },
-                  { month: "Jan", cases: 223 },
-                  { month: "Feb", cases: 200 },
-                ]}
-              >
+              <BarChart data={data.complianceBacklog}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                 <XAxis dataKey="month" stroke="#94A3B8" style={{ fontSize: "12px" }} />
                 <YAxis stroke="#94A3B8" style={{ fontSize: "12px" }} />
@@ -167,10 +147,7 @@ export const Dashboard = () => {
       <div className="bg-card border border-border rounded-lg">
         <div className="p-6 border-b border-border flex items-center justify-between">
           <h3 className="text-sm font-medium text-foreground">Recent Cases</h3>
-          <Link
-            to="/case-history"
-            className="text-xs text-primary hover:text-primary/80 transition-colors"
-          >
+          <Link to="/case-history" className="text-xs text-primary hover:text-primary/80 transition-colors">
             View All →
           </Link>
         </div>
@@ -188,16 +165,16 @@ export const Dashboard = () => {
               </tr>
             </thead>
             <tbody>
-              {recentCases.map((case_) => (
+              {data.recentCases.map((case_) => (
                 <tr key={case_.id} className="border-b border-border hover:bg-muted/5 transition-colors">
                   <td className="px-6 py-4 text-sm font-medium text-foreground">{case_.id}</td>
                   <td className="px-6 py-4 text-sm text-foreground">{case_.customer}</td>
                   <td className="px-6 py-4 text-sm text-foreground">{case_.amount}</td>
                   <td className="px-6 py-4">
-                    <RiskBadge level={case_.riskLevel} />
+                    <RiskBadge level={case_.riskLevel as RiskLevel} />
                   </td>
                   <td className="px-6 py-4">
-                    <StatusBadge status={case_.status} />
+                    <StatusBadge status={case_.status as CaseStatus} />
                   </td>
                   <td className="px-6 py-4 text-sm text-muted-foreground">{case_.date}</td>
                   <td className="px-6 py-4">

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { api } from '../lib/api';
 
 export type UserRole = 'Analyst' | 'Supervisor' | 'Auditor';
 
@@ -13,6 +14,7 @@ interface RoleContextType {
   setUser: (user: User | null) => void;
   isAuthenticated: boolean;
   logout: () => void;
+  login: (employeeId: string, password: string) => Promise<void>;
 }
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
@@ -24,6 +26,15 @@ export const RoleProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(null);
   };
 
+  const login = async (employeeId: string, password: string) => {
+    const data = await api.login(employeeId, password);
+    setUser({
+      employeeId: data.employeeId,
+      name: data.name,
+      role: data.role,
+    });
+  };
+
   return (
     <RoleContext.Provider
       value={{
@@ -31,6 +42,7 @@ export const RoleProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUser,
         isAuthenticated: !!user,
         logout,
+        login,
       }}
     >
       {children}

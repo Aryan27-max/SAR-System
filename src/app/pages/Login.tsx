@@ -1,22 +1,16 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useRole } from "../context/RoleContext";
-import { Shield, AlertCircle } from "lucide-react";
+import { Shield, AlertCircle, Loader2 } from "lucide-react";
 
 export const Login = () => {
   const [employeeId, setEmployeeId] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
-  const { setUser, isAuthenticated } = useRole();
+  const [loading, setLoading] = useState(false);
+  const { login, isAuthenticated } = useRole();
   const navigate = useNavigate();
-
-  // Demo credentials
-  const validCredentials = [
-    { employeeId: "ex123", password: "analyst123", name: "Sarah Chen", role: "Analyst" as const },
-    { employeeId: "ex456", password: "supervisor123", name: "Michael Torres", role: "Supervisor" as const },
-    { employeeId: "ex789", password: "auditor123", name: "Jennifer Wu", role: "Auditor" as const },
-  ];
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -24,24 +18,19 @@ export const Login = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    
-    // Validate credentials
-    const validUser = validCredentials.find(
-      (cred) => cred.employeeId === employeeId && cred.password === password
-    );
+    setLoading(true);
 
-    if (validUser) {
-      setUser({
-        employeeId: validUser.employeeId,
-        name: validUser.name,
-        role: validUser.role,
-      });
+    try {
+      await login(employeeId, password);
       navigate("/");
-    } else {
-      setError("Invalid employee ID or password. Please use demo credentials below.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Login failed";
+      setError(msg);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -93,6 +82,7 @@ export const Login = () => {
                 className="w-full px-4 py-2.5 bg-input-background border border-input rounded text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="ex123"
                 required
+                disabled={loading}
               />
             </div>
 
@@ -108,6 +98,7 @@ export const Login = () => {
                 className="w-full px-4 py-2.5 bg-input-background border border-input rounded text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="••••••••"
                 required
+                disabled={loading}
               />
             </div>
 
@@ -126,9 +117,17 @@ export const Login = () => {
 
             <button
               type="submit"
-              className="w-full bg-primary text-primary-foreground py-2.5 rounded font-medium hover:bg-primary/90 transition-colors"
+              disabled={loading}
+              className="w-full bg-primary text-primary-foreground py-2.5 rounded font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              Sign In
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Signing In...
+                </>
+              ) : (
+                "Sign In"
+              )}
             </button>
           </form>
         </div>
@@ -138,21 +137,33 @@ export const Login = () => {
           <p className="text-xs text-muted-foreground text-center">
             Authorized internal use only. All activity is monitored and logged.
           </p>
-          
+
           {/* Demo Credentials */}
           <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
             <h3 className="text-xs font-semibold text-primary mb-3 flex items-center gap-2">
               <Shield className="w-3.5 h-3.5" />
               Demo Credentials
             </h3>
-            <div className="space-y-1.5 text-sm text-foreground">
-              <div className="flex items-start gap-2">
-                <span className="text-muted-foreground min-w-[100px]">Employee ID:</span>
-                <span className="font-mono text-primary">ex123</span>
+            <div className="space-y-2 text-xs text-foreground">
+              <div className="grid grid-cols-3 gap-1">
+                <span className="text-muted-foreground font-medium">Role</span>
+                <span className="text-muted-foreground font-medium">Employee ID</span>
+                <span className="text-muted-foreground font-medium">Password</span>
               </div>
-              <div className="flex items-start gap-2">
-                <span className="text-muted-foreground min-w-[100px]">Password:</span>
+              <div className="grid grid-cols-3 gap-1">
+                <span className="text-foreground">Analyst</span>
+                <span className="font-mono text-primary">ex123</span>
                 <span className="font-mono text-primary">analyst123</span>
+              </div>
+              <div className="grid grid-cols-3 gap-1">
+                <span className="text-foreground">Supervisor</span>
+                <span className="font-mono text-primary">ex456</span>
+                <span className="font-mono text-primary">supervisor123</span>
+              </div>
+              <div className="grid grid-cols-3 gap-1">
+                <span className="text-foreground">Auditor</span>
+                <span className="font-mono text-primary">ex789</span>
+                <span className="font-mono text-primary">auditor123</span>
               </div>
             </div>
           </div>
