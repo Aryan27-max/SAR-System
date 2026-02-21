@@ -1,6 +1,6 @@
 import { createBrowserRouter } from "react-router";
 import { Login } from "./pages/Login";
-import { Dashboard } from "./pages/Dashboard";
+import Dashboard from "./pages/Dashboard";
 import { GenerateSAR } from "./pages/GenerateSAR";
 import { AuditTrail } from "./pages/AuditTrail";
 import { CaseHistory } from "./pages/CaseHistory";

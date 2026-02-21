@@ -6,10 +6,11 @@ import { FileText, AlertTriangle, Clock, TrendingDown, Loader2 } from "lucide-re
 import { Link } from "react-router";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { api } from "../lib/api";
+import { getAllUsers, getHighRiskUsers } from "../../services/amlService";
 
 type DashboardData = Awaited<ReturnType<typeof api.getDashboard>>;
 
-export const Dashboard = () => {
+const Dashboard = () => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -194,3 +195,5 @@ export const Dashboard = () => {
     </div>
   );
 };
+
+export default Dashboard;
